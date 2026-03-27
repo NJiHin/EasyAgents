@@ -18,11 +18,18 @@ async def create_run(req: RunRequest, background_tasks: BackgroundTasks):
     if not result["valid"]:
         raise HTTPException(status_code=422, detail=result["errors"])
 
+    store.cancelled = False
     store.current_queue = asyncio.Queue()
     background_tasks.add_task(execute_run, req.graph, req.task)
     return {"started": True}
 
 
 @router.delete("/runs")
-def cancel_run():
+async def cancel_run():
+    store.cancelled = True
+    if store.current_queue is not None:
+        # Drain any pending events so the WS handler unblocks and closes
+        while not store.current_queue.empty():
+            store.current_queue.get_nowait()
+        await store.current_queue.put(None)
     return {"cancelled": True}
