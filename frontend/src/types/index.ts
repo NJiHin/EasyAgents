@@ -22,7 +22,7 @@ export interface GraphDefinition {
   }>;
 }
 
-export type RunStatus = 'idle' | 'running' | 'completed' | 'error';
+export type RunStatus = 'idle' | 'running' | 'cancelling' | 'completed' | 'error';
 
 export type EventType =
   | 'agent_message'

@@ -112,7 +112,8 @@ export const useRunStore = create<RunState>((set, get) => ({
   cancelRun: () => {
     fetch('/api/runs', { method: 'DELETE' }).catch(() => {});
     get().ws?.close();
-    set({ status: 'idle', ws: null });
+    set({ status: 'cancelling', ws: null, agentStatuses: new Map(), activeEdgeIds: new Set() });
+    setTimeout(() => set({ status: 'idle' }), 1500);
   },
 
   startRun: async (graph, task) => {

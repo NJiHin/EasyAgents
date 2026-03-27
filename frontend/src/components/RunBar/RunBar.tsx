@@ -14,7 +14,7 @@ export function RunBar() {
   const cancelRun = useRunStore((s) => s.cancelRun);
 
   const isReady = validationStatus === 'ready';
-  const isRunning = status === 'running';
+  const isRunning = status === 'running' || status === 'cancelling';
 
   const validationMessages: Record<string, string> = {
     no_orchestrator: 'No orchestrator node — set one node as Orchestrator.',
@@ -32,6 +32,7 @@ export function RunBar() {
   const statusColors: Record<string, string> = {
     idle: 'var(--text-muted)',
     running: 'var(--warning)',
+    cancelling: 'var(--text-muted)',
     completed: 'var(--success)',
     error: 'var(--error)',
   };
