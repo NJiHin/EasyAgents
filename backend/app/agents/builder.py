@@ -1,6 +1,9 @@
 import asyncio
 from google.adk.agents import Agent
+from google.adk.agents.callback_context import CallbackContext
+from google.adk.models.llm_request import LlmRequest
 from google.adk.tools import FunctionTool
+from google.genai import types as genai_types
 from app.tools.tools import (
     TOOL_MAP,
     ORCHESTRATOR_TOOLS,
@@ -10,6 +13,27 @@ from app.tools.tools import (
     make_invoke_evaluator,
 )
 from app.models import GraphDefinition
+import app.session.store as store
+
+
+def _cancel_callback(
+    callback_context: CallbackContext,
+    llm_request: LlmRequest,
+) -> genai_types.GenerateContentResponse | None:
+    """Return a stub response to abort this LLM call if the run is cancelled."""
+    if store.cancelled:
+        return genai_types.GenerateContentResponse(
+            candidates=[
+                genai_types.Candidate(
+                    content=genai_types.Content(
+                        role="model",
+                        parts=[genai_types.Part(text="[cancelled]")],
+                    ),
+                    finish_reason=genai_types.FinishReason.STOP,
+                )
+            ]
+        )
+    return None
 
 
 def build_graph(
@@ -31,6 +55,7 @@ def build_graph(
             model="gemini-2.5-flash",
             instruction=EVALUATOR_PREAMBLE + "\n\n" + (ev_node.data.systemPrompt or ""),
             tools=[],
+            before_model_callback=_cancel_callback,
         )
 
     # Map each worker node id → (evaluator Agent, max_iterations)
@@ -64,6 +89,7 @@ def build_graph(
             model="gemini-2.5-flash",
             instruction=node.data.systemPrompt or "You are a helpful assistant.",
             tools=tools,
+            before_model_callback=_cancel_callback,
         )
         worker_agents[node.id] = agent
 
@@ -80,6 +106,7 @@ def build_graph(
                 model="gemini-2.5-flash",
                 instruction=node.data.systemPrompt or "You are a helpful assistant.",
                 tools=[FunctionTool(invoke_evaluator_fn)] + base_tools,
+                before_model_callback=_cancel_callback,
             )
             worker_agents[node.id] = agent
 
@@ -100,6 +127,7 @@ def build_graph(
         model="gemini-2.5-flash",
         instruction=instruction,
         tools=ORCHESTRATOR_TOOLS,
+        before_model_callback=_cancel_callback,
     )
 
     return orchestrator
