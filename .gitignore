@@ -1,0 +1,15 @@
+phases/
+docs/
+pw-screenshots/
+
+.claude
+.venv
+.playwright-mcp
+.pytest_cache
+
+backend/.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo

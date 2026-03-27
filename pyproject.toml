@@ -1,0 +1,14 @@
+[project]
+name = "agentic"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "ddgs>=9.11.4",
+    "poethepoet>=0.42.1",
+]
+
+[tool.poe.tasks]
+serve = { cmd = "uv run uvicorn main:app --reload --port 8000", cwd = "backend" }
+dev = { cmd = "pnpm dev", cwd = "frontend" }
