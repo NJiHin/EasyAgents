@@ -110,6 +110,7 @@ export const useRunStore = create<RunState>((set, get) => ({
   selectHistory: (index) => set({ selectedHistoryIndex: index }),
 
   cancelRun: () => {
+    fetch('/api/runs', { method: 'DELETE' }).catch(() => {});
     get().ws?.close();
     set({ status: 'idle', ws: null });
   },
