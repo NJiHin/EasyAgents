@@ -89,3 +89,5 @@ async def execute_run(graph: GraphDefinition, task: str):
         })
     finally:
         await queue.put(None)
+        store.cancelled = False
+        store.current_queue = None
