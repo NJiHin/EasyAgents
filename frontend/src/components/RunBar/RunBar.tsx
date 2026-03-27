@@ -56,8 +56,12 @@ export function RunBar() {
           {isRunning ? 'Running...' : 'Run ▶'}
         </button>
         {isRunning && (
-          <button className="runbar__btn runbar__btn--stop" onClick={cancelRun}>
-            Stop ■
+          <button
+            className="runbar__btn runbar__btn--stop"
+            onClick={cancelRun}
+            disabled={status === 'cancelling'}
+          >
+            {status === 'cancelling' ? 'Cancelling...' : 'Stop ■'}
           </button>
         )}
         <span
