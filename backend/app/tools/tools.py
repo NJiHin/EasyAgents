@@ -65,7 +65,7 @@ def read_url(url: str) -> str:
     except Exception as e:
         return f"Failed to read URL: {e}"
 
-
+'''
 def python_repl(code: str) -> str:
     """Execute Python code and return stdout."""
     return "[python_repl] Code execution is not yet enabled in this version."
@@ -79,15 +79,15 @@ def file_read(path: str) -> str:
 def file_write(path: str, content: str) -> str:
     """Write content to a file in the workspace."""
     return "[file_write] File access is not yet enabled in this version."
-
+'''
 
 TOOL_MAP: dict[str, FunctionTool] = {
     "calculator":  FunctionTool(calculator),
     "web_search":  FunctionTool(web_search),
     "read_url":    FunctionTool(read_url),
-    "python_repl": FunctionTool(python_repl),
-    "file_read":   FunctionTool(file_read),
-    "file_write":  FunctionTool(file_write),
+    #"python_repl": FunctionTool(python_repl),
+    #"file_read":   FunctionTool(file_read),
+    #"file_write":  FunctionTool(file_write),
 }
 
 

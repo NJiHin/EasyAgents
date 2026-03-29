@@ -10,5 +10,5 @@ dependencies = [
 ]
 
 [tool.poe.tasks]
-serve = { cmd = "uv run uvicorn main:app -- active --reload --port 8000", cwd = "backend" }
+serve = { cmd = "uv run uvicorn main:app --reload --port 8000", cwd = "backend" }
 dev = { cmd = "pnpm dev", cwd = "frontend" }
