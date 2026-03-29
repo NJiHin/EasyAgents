@@ -6,6 +6,7 @@ from google.adk.tools import FunctionTool
 from google.genai import types as genai_types
 from app.tools.tools import (
     TOOL_MAP,
+    EVALUATOR_TOOL_MAP,
     ORCHESTRATOR_TOOLS,
     ORCHESTRATOR_PREAMBLE,
     EVALUATOR_PREAMBLE,
@@ -49,12 +50,13 @@ def build_graph(
     # Build all evaluator agents keyed by node id; not added to sub_agent_map
     evaluator_agents: dict[str, Agent] = {}
     for ev_node in evaluator_nodes:
+        ev_tools = [EVALUATOR_TOOL_MAP[t] for t in ev_node.data.enabledTools if t in EVALUATOR_TOOL_MAP]
         evaluator_agents[ev_node.id] = Agent(
             name=ev_node.data.name,
             description=(ev_node.data.systemPrompt or "")[:120],
             model="gemini-2.5-flash",
             instruction=EVALUATOR_PREAMBLE + "\n\n" + (ev_node.data.systemPrompt or ""),
-            tools=[],
+            tools=ev_tools,
             before_model_callback=_cancel_callback,
         )
 

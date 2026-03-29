@@ -4,7 +4,7 @@ import type { AgentNodeData } from "../../types";
 import { useTools } from "../../hooks/useTools";
 
 export function NodePanel() {
-  const tools = useTools();
+  const { tools, evaluatorTools } = useTools();
   const selectedNodeId = useGraphStore((s) => s.selectedNodeId);
   const nodes = useGraphStore((s) => s.nodes);
   const edges = useGraphStore((s) => s.edges);
@@ -216,18 +216,49 @@ export function NodePanel() {
                     </span>
                   </label>
                 ) : isEvaluator ? (
-                  <label className="node-panel__tool-row node-panel__tool-row--last">
-                    <input
-                      type="checkbox"
-                      className="node-panel__tool-checkbox"
-                      checked
-                      disabled
-                    />
-                    <span className="node-panel__tool-info">
-                      <span className="node-panel__tool-name">Judge Output</span>
-                      <span className="node-panel__tool-desc">Evaluators do not use external tools</span>
-                    </span>
-                  </label>
+                  <>
+                    {evaluatorTools.length === 0 ? (
+                      <label className="node-panel__tool-row node-panel__tool-row--last">
+                        <input
+                          type="checkbox"
+                          className="node-panel__tool-checkbox"
+                          checked
+                          disabled
+                        />
+                        <span className="node-panel__tool-info">
+                          <span className="node-panel__tool-name">Judge Output</span>
+                          <span className="node-panel__tool-desc">No optional tools available</span>
+                        </span>
+                      </label>
+                    ) : (
+                      evaluatorTools.map((tool, idx) => {
+                        const enabled = data.enabledTools ?? [];
+                        const checked = enabled.includes(tool.id);
+                        return (
+                          <label
+                            key={tool.id}
+                            className={`node-panel__tool-row${idx === evaluatorTools.length - 1 ? " node-panel__tool-row--last" : ""}`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="node-panel__tool-checkbox"
+                              checked={checked}
+                              onChange={() => {
+                                const next = checked
+                                  ? enabled.filter((t) => t !== tool.id)
+                                  : [...enabled, tool.id];
+                                updateNodeData(selectedNodeId, { enabledTools: next });
+                              }}
+                            />
+                            <span className="node-panel__tool-info">
+                              <span className="node-panel__tool-name">{tool.name}</span>
+                              <span className="node-panel__tool-desc">{tool.description}</span>
+                            </span>
+                          </label>
+                        );
+                      })
+                    )}
+                  </>
                 ) : (
                   <>
                     {hasEvaluatorChild && (

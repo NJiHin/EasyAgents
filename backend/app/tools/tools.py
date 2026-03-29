@@ -1,6 +1,8 @@
 import asyncio
 import contextvars
 import math
+import subprocess
+import sys
 from collections.abc import Callable
 from datetime import datetime, timezone
 
@@ -65,29 +67,40 @@ def read_url(url: str) -> str:
     except Exception as e:
         return f"Failed to read URL: {e}"
 
-'''
+
+# NOTE: No sandbox applied — subprocess inherits the server process's filesystem and network access.
+# This is intentional for a local dev tool; do not expose this in a multi-tenant or networked context.
 def python_repl(code: str) -> str:
-    """Execute Python code and return stdout."""
-    return "[python_repl] Code execution is not yet enabled in this version."
+    """Execute Python code in a subprocess and return stdout + stderr (truncated to 4000 chars)."""
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        output = proc.stdout + proc.stderr
+    except subprocess.TimeoutExpired as e:
+        if e.process is not None:
+            e.process.kill()
+            e.process.communicate()
+        return "Error: execution timed out after 10s"
+    except Exception as e:
+        return f"Error: {e}"
+
+    if len(output) > 4000:
+        output = output[:4000] + "...(truncated)"
+    return output or "(no output)"
 
 
-def file_read(path: str) -> str:
-    """Read a file from the workspace."""
-    return "[file_read] File access is not yet enabled in this version."
-
-
-def file_write(path: str, content: str) -> str:
-    """Write content to a file in the workspace."""
-    return "[file_write] File access is not yet enabled in this version."
-'''
+EVALUATOR_TOOL_MAP: dict[str, FunctionTool] = {
+    "python_repl": FunctionTool(python_repl),
+}
 
 TOOL_MAP: dict[str, FunctionTool] = {
     "calculator":  FunctionTool(calculator),
     "web_search":  FunctionTool(web_search),
     "read_url":    FunctionTool(read_url),
-    #"python_repl": FunctionTool(python_repl),
-    #"file_read":   FunctionTool(file_read),
-    #"file_write":  FunctionTool(file_write),
 }
 
 
