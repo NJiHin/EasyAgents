@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Node, Edge, Connection, OnNodesChange, OnEdgesChange } from '@xyflow/react';
 import { applyNodeChanges, applyEdgeChanges, addEdge } from '@xyflow/react';
-import type { AgentNodeData } from '../types';
+import type { AgentNodeData } from '../types/index';
+import type { Template } from '../templates';
 
 type ValidationStatus =
   | 'ready'
@@ -26,6 +27,7 @@ interface GraphState {
   onConnect: (connection: Connection) => void;
   onNodesChange: OnNodesChange;
   onEdgesChange: OnEdgesChange;
+  loadTemplate: (template: Template) => void;
 }
 
 function hasCycle(nodes: Node[], edges: Edge[], exemptedEdges?: { source: string; target: string }[]): boolean {
@@ -207,6 +209,15 @@ export const useGraphStore = create<GraphState>()(persist((set, get) => ({
     const { nodes, edges } = get();
     const newEdges = applyEdgeChanges(changes, edges);
     set({ edges: newEdges, validationStatus: recalcValidation(nodes, newEdges) });
+  },
+
+  loadTemplate: (template: Template) => {
+    set({
+      nodes: template.nodes,
+      edges: template.edges,
+      selectedNodeId: null,
+      validationStatus: recalcValidation(template.nodes, template.edges),
+    });
   },
 }), {
   name: 'easyagents-graph',

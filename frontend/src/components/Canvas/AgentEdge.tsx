@@ -1,10 +1,15 @@
-import { BaseEdge, EdgeLabelRenderer, getBezierPath, useReactFlow } from '@xyflow/react';
-import type { EdgeProps } from '@xyflow/react';
+import {
+  BaseEdge,
+  EdgeLabelRenderer,
+  getBezierPath,
+  useReactFlow,
+} from "@xyflow/react";
+import type { EdgeProps } from "@xyflow/react";
 
 interface AgentEdgeData {
   selected: boolean;
   onSelect: (id: string | null) => void;
-  edgeType?: 'delegation' | 'feedback';
+  edgeType?: "delegation" | "feedback";
 }
 
 export function AgentEdge({
@@ -23,7 +28,7 @@ export function AgentEdge({
   const edgeData = data as unknown as AgentEdgeData;
   const isSelected = edgeData?.selected ?? false;
   const onSelect = edgeData?.onSelect;
-  const isFeedback = edgeData?.edgeType === 'feedback';
+  const isFeedback = edgeData?.edgeType === "feedback";
 
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
@@ -47,7 +52,14 @@ export function AgentEdge({
   }
 
   const isAnimated = animated || isSelected;
-  const strokeColor = isFeedback ? 'var(--warning, #f59e0b)' : undefined;
+  const strokeColor = isFeedback ? "var(--warning, #f59e0b)" : undefined;
+  const arrowColor = isFeedback
+    ? "var(--warning, #f59e0b)"
+    : "var(--border, #111111)";
+
+  // Angle of the edge at midpoint, approximated from source → target
+  const angle =
+    Math.atan2(targetY - sourceY, targetX - sourceX) * (180 / Math.PI);
 
   return (
     <>
@@ -57,7 +69,7 @@ export function AgentEdge({
         fill="none"
         stroke="transparent"
         strokeWidth={16}
-        style={{ cursor: 'pointer' }}
+        style={{ cursor: "pointer" }}
         onClick={handleClick}
       />
       <BaseEdge
@@ -66,23 +78,38 @@ export function AgentEdge({
         style={{
           ...style,
           stroke: strokeColor,
-          strokeDasharray: isFeedback ? '6 3' : isAnimated ? '6 3' : undefined,
-          animation: isAnimated ? 'edge-march 400ms linear infinite' : undefined,
+          strokeDasharray: isFeedback ? "6 3" : isAnimated ? "6 3" : undefined,
+          animation: isAnimated
+            ? "edge-march 400ms linear infinite"
+            : undefined,
           strokeWidth: isSelected ? 2.5 : 2,
         }}
         interactionWidth={0}
       />
-      {isSelected && (
-        <EdgeLabelRenderer>
+      <EdgeLabelRenderer>
+        {/* Centre direction arrow */}
+        <div
+          className="edge-arrow"
+          style={{
+            transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px) rotate(${angle}deg)`,
+            color: arrowColor,
+          }}
+          onClick={handleClick}
+        >
+          ▶
+        </div>
+        {isSelected && (
           <div
             className="edge-delete-btn"
-            style={{ transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)` }}
+            style={{
+              transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+            }}
             onClick={handleDelete}
           >
             ×
           </div>
-        </EdgeLabelRenderer>
-      )}
+        )}
+      </EdgeLabelRenderer>
     </>
   );
 }

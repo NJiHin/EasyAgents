@@ -165,6 +165,149 @@ body {
   box-shadow: 3px 3px 0 var(--border);
 }
 
+.topbar-btn--help {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  width: 48px;
+  border-left: 1px solid var(--border-light);
+  border-right: none;
+  padding: 0;
+}
+
+.topbar-btn--help:hover {
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: 3px 3px 0 var(--border);
+}
+
+/* ─── Help Modal ─────────────────────────────────────── */
+.help-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(242, 239, 232, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.help-modal {
+  background: var(--surface-raised);
+  border: var(--border-width) solid var(--border);
+  width: 480px;
+  max-width: calc(100vw - 40px);
+}
+
+.help-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 44px;
+  border-bottom: var(--border-width) solid var(--border);
+  background: var(--surface);
+}
+
+.help-modal__title {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.help-modal__close {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0 4px 12px;
+  line-height: 1;
+}
+
+.help-modal__close:hover {
+  color: var(--text);
+}
+
+.help-modal__body {
+  padding: 8px 0;
+}
+
+.help-step {
+  display: flex;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.help-step:last-child {
+  border-bottom: none;
+}
+
+.help-step__num {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.help-step__content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.help-step__title {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.help-step__body {
+  font-family: var(--font);
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.help-templates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.help-template-btn {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text);
+  background: var(--surface);
+  border: var(--border-width) solid var(--border);
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+.help-template-btn:hover {
+  background: var(--accent);
+  color: var(--accent-text);
+  box-shadow: 3px 3px 0 var(--border);
+}
+
 /* ─── CostBox ─────────────────────────────────────── */
 .cost-box {
   position: relative;
@@ -420,6 +563,20 @@ body {
 @keyframes edge-march {
   from { stroke-dashoffset: 18; }
   to   { stroke-dashoffset: 0; }
+}
+
+.edge-arrow {
+  position: absolute;
+  font-size: 15px;
+  line-height: 1;
+  pointer-events: all;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.1s;
+}
+
+.react-flow__edge:hover .edge-arrow {
+  opacity: 0.9;
 }
 
 .edge-delete-btn {
