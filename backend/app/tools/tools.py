@@ -2,7 +2,6 @@ import asyncio
 import contextvars
 import math
 import subprocess
-import sys
 from collections.abc import Callable
 from datetime import datetime, timezone
 
@@ -68,23 +67,34 @@ def read_url(url: str) -> str:
         return f"Failed to read URL: {e}"
 
 
-# NOTE: No sandbox applied — subprocess inherits the server process's filesystem and network access.
-# This is intentional for a local dev tool; do not expose this in a multi-tenant or networked context.
 def python_repl(code: str) -> str:
-    """Execute Python code in a subprocess and return stdout + stderr (truncated to 4000 chars)."""
+    """Execute Python code in a sandboxed Docker container and return stdout + stderr (truncated to 4000 chars)."""
     try:
         proc = subprocess.run(
-            [sys.executable, "-c", code],
+            [
+                "docker", "run", "--rm",
+                "--network", "none",
+                "--memory", "128m",
+                "--cpus", "0.5",
+                "--read-only",
+                "--tmpfs", "/tmp:size=10m",
+                "--no-new-privileges",
+                "--cap-drop", "ALL",
+                "python:3.12-slim",
+                "python", "-c", code,
+            ],
             capture_output=True,
             text=True,
-            timeout=10,
+            timeout=15,
         )
         output = proc.stdout + proc.stderr
     except subprocess.TimeoutExpired as e:
         if e.process is not None:
             e.process.kill()
             e.process.communicate()
-        return "Error: execution timed out after 10s"
+        return "Error: execution timed out after 15s"
+    except FileNotFoundError:
+        return "Error: Docker not found — ensure Docker Desktop is running"
     except Exception as e:
         return f"Error: {e}"
 
@@ -133,7 +143,7 @@ def token_meta_from(usage) -> dict:
     return meta
 
 
-# ── Orchestrator dispatch ─────────────────────────────────────────────────────
+# ── Agents dispatch ─────────────────────────────────────────────────────
 
 ORCHESTRATOR_PREAMBLE = """You are an orchestrator. When given a task:
 1. Call list_agents to discover available agents and their capabilities.
