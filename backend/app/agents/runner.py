@@ -43,7 +43,7 @@ async def execute_run(graph: GraphDefinition, task: str):
         async for event in runner.run_async(
             user_id="user", session_id=session.id, new_message=user_message,
         ):
-            # Track last usage_metadata — ADK reports cumulative totals, not per-chunk deltas
+            # Track last usage_metadata
             usage = getattr(event, "usage_metadata", None)
             if usage is not None:
                 last_usage = usage
@@ -58,9 +58,7 @@ async def execute_run(graph: GraphDefinition, task: str):
                 })
                 return
 
-            # Orchestrator only calls list_agents/invoke_agent — tool call/result events
-            # are meta-coordination noise, not user-visible work. Sub-agents emit their
-            # own tool_call/tool_result events via _run_sub_agent in tools.py.
+            # Orchestrator only calls list_agents/invoke_agent
             if event.is_final_response() and event.content and event.content.parts:
                 final_text = "".join(
                     p.text for p in event.content.parts if hasattr(p, "text") and p.text

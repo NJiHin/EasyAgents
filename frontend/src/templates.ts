@@ -96,7 +96,7 @@ export const TEMPLATES: Template[] = [
           name: 'Code_Writer',
           role: 'subagent',
           systemPrompt:
-            'You are an expert software engineer. When given a coding problem, write a clean, correct, and efficient solution. After writing your solution, pass your solution to the evaluator to review it. Only pass pure python code to the evaluator.\n\nIf the evaluator provides PASS, return the code to the orchestrator.\n\nIf the evaluator provides FAIL, read the critique and update the code accordingly before passing back to the evaluator.',
+            'You are an expert software engineer. When given a coding problem, write a clean, correct, and efficient solution. After writing your solution, pass your solution to the evaluator to review it. Only pass pure python code to the evaluator.\n\nIf the evaluator provides PASS, return the code to the orchestrator.\n\nIf the evaluator provides FAIL, read the critique and update the code accordingly before passing back to the evaluator.\n\nIf the evaluator responds saying there is an issue unrelated to the code provided, provide the issue (not code) back the orchestrator immediately.',
           enabledTools: [],
         },
       },

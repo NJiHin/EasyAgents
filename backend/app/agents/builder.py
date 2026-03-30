@@ -53,7 +53,7 @@ def build_graph(
     evaluator_agents: dict[str, Agent] = {}
     for ev_node in evaluator_nodes:
         ev_tools = [EVALUATOR_TOOL_MAP[t] for t in ev_node.data.enabledTools if t in EVALUATOR_TOOL_MAP]
-        all_ev_tools = [FunctionTool(make_list_tools(ev_tools))] + ev_tools
+        all_ev_tools = [FunctionTool(make_list_tools(ev_tools, agent_name=ev_node.data.name, agent_id=ev_node.id))] + ev_tools
         evaluator_agents[ev_node.id] = Agent(
             name=ev_node.data.name,
             description=(ev_node.data.systemPrompt or "")[:120],
@@ -84,7 +84,7 @@ def build_graph(
     worker_agents: dict[str, Agent] = {}
     for node in worker_nodes:
         base_tools = [TOOL_MAP[t] for t in node.data.enabledTools if t in TOOL_MAP]
-        all_tools = [FunctionTool(make_list_tools(base_tools))] + base_tools
+        all_tools = [FunctionTool(make_list_tools(base_tools, agent_name=node.data.name, agent_id=node.id))] + base_tools
         agent = Agent(
             name=node.data.name,
             description=(node.data.systemPrompt or "")[:120],
@@ -108,7 +108,7 @@ def build_graph(
                 description=(node.data.systemPrompt or "")[:120],
                 model="gemini-2.5-flash",
                 instruction=SUBAGENT_PREAMBLE + "\n\n" + (node.data.systemPrompt or "You are a helpful assistant."),
-                tools=[FunctionTool(make_list_tools(all_tools))] + all_tools,
+                tools=[FunctionTool(make_list_tools(all_tools, agent_name=node.data.name, agent_id=node.id))] + all_tools,
                 before_model_callback=_cancel_callback,
             )
             worker_agents[node.id] = agent
