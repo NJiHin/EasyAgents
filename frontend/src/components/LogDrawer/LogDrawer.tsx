@@ -189,7 +189,31 @@ export function LogDrawer() {
 
   const [expanded, setExpanded] = useState(false);
   const [view, setView] = useState<'log' | 'timeline'>('log');
+  const [drawerHeight, setDrawerHeight] = useState(240);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const dragStartY = useRef(0);
+  const dragStartHeight = useRef(0);
+
+  const handleDragStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isDragging.current = true;
+    dragStartY.current = e.clientY;
+    dragStartHeight.current = drawerHeight;
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!isDragging.current) return;
+      const delta = dragStartY.current - ev.clientY;
+      setDrawerHeight(Math.max(80, dragStartHeight.current + delta));
+    };
+    const onMouseUp = () => {
+      isDragging.current = false;
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
 
   const isViewingHistory = selectedHistoryIndex !== null;
   const visibleEvents = isViewingHistory ? history[selectedHistoryIndex].events : currentEvents;
@@ -212,7 +236,13 @@ export function LogDrawer() {
     : `Event Log (${currentEvents.length})`;
 
   return (
-    <div className={`log-drawer${expanded ? ' log-drawer--expanded' : ''}`}>
+    <div
+      className={`log-drawer${expanded ? ' log-drawer--expanded' : ''}`}
+      style={expanded ? { height: drawerHeight + 32 } : undefined}
+    >
+      {expanded && (
+        <div className="log-drawer__resize-handle" onMouseDown={handleDragStart} />
+      )}
       <div className="log-drawer__header">
         <div className="log-drawer__header-left" onClick={() => setExpanded((e) => !e)}>
           <span className="log-drawer__label">{label}</span>
@@ -251,7 +281,7 @@ export function LogDrawer() {
         </div>
       </div>
       {expanded && (
-        <div className="log-drawer__body" ref={bodyRef}>
+        <div className="log-drawer__body" ref={bodyRef} style={{ height: drawerHeight }}>
           {view === 'log' ? (
             visibleEvents.length === 0
               ? <span className="log-drawer__empty">No events yet</span>

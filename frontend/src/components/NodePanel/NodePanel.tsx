@@ -1,7 +1,51 @@
-import { useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useGraphStore } from "../../store/graphStore";
 import type { AgentNodeData } from "../../types";
 import { useTools } from "../../hooks/useTools";
+
+const PREAMBLES: Record<string, string> = {
+  orchestrator:
+    "You are an orchestrator. When given a task:\n1. Call list_agents to discover available agents and their capabilities.\n2. Decompose the task into independent subtasks, one per agent.\n3. Call invoke_agent for each subtask — pass only what that agent needs, nothing else.\n4. Once all invoke_agent calls complete and you have all results, compile a final response.\nNever call a sub-agent's tools directly. Only use list_agents and invoke_agent.",
+  subagent:
+    "When you start working on a task:\n1. ALWAYS call list_tools tool FIRST to discover what tools are available to you.\n2. Use only the tools listed — do not attempt to call any tool not returned by list_tools.\n3. If the evaluator responds with an issue unrelated to your response, return the EXACT issue verbatim to the orchestrator.",
+  evaluator:
+    "You are an evaluator. You will receive a result produced by another agent.\nWhen you begin:\n1. ALWAYS call list_tools tool FIRST to discover what tools are available to you.\n2. Use only tools returned from list_tools as needed to verify the result before making your verdict.\n3. Once your assessment is complete, your final response must be exactly one of:\n  PASS — if the result is satisfactory.\n  FAIL: <concise critique> — if it is not.",
+};
+
+function PreambleHint({ text }: { text: string }) {
+  const [visible, setVisible] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const ref = useRef<HTMLSpanElement>(null);
+
+  const show = () => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    setPos({ top: rect.bottom + 6, left: rect.left + rect.width / 2 });
+    setVisible(true);
+  };
+
+  return (
+    <>
+      <span
+        ref={ref}
+        className="node-panel__preamble-hint"
+        onMouseEnter={show}
+        onMouseLeave={() => setVisible(false)}
+      >?</span>
+      {visible && createPortal(
+        <div
+          className="node-panel__preamble-tooltip"
+          style={{ top: pos.top, left: pos.left }}
+        >
+          <div className="node-panel__preamble-tooltip-header">Preamble</div>
+          {text}
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
 
 export function NodePanel() {
   const { tools, evaluatorTools } = useTools();
@@ -111,7 +155,10 @@ export function NodePanel() {
             </div>
 
             <div className="node-panel__field">
-              <label className="node-panel__label">System Prompt</label>
+              <label className="node-panel__label">
+                System Prompt
+                <PreambleHint text={PREAMBLES[data.role]} />
+              </label>
               <textarea
                 className="node-panel__textarea"
                 value={data.systemPrompt}
