@@ -1,10 +1,54 @@
-import { useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useGraphStore } from "../../store/graphStore";
 import type { AgentNodeData } from "../../types";
 import { useTools } from "../../hooks/useTools";
 
+const PREAMBLES: Record<string, string> = {
+  orchestrator:
+    "You are an orchestrator. When given a task:\n1. Call list_agents to discover available agents and their capabilities.\n2. Decompose the task into independent subtasks, one per agent.\n3. Call invoke_agent for each subtask — pass only what that agent needs, nothing else.\n4. Once all invoke_agent calls complete and you have all results, compile a final response.\nNever call a sub-agent's tools directly. Only use list_agents and invoke_agent.",
+  subagent:
+    "When you start working on a task:\n1. ALWAYS call list_tools tool FIRST to discover what tools are available to you.\n2. Use only the tools listed — do not attempt to call any tool not returned by list_tools.\n3. If the evaluator responds with an issue unrelated to your response, return the EXACT issue verbatim to the orchestrator.",
+  evaluator:
+    "You are an evaluator. You will receive a result produced by another agent.\nWhen you begin:\n1. ALWAYS call list_tools tool FIRST to discover what tools are available to you.\n2. Use only tools returned from list_tools as needed to verify the result before making your verdict.\n3. Once your assessment is complete, your final response must be exactly one of:\n  PASS — if the result is satisfactory.\n  FAIL: <concise critique> — if it is not.",
+};
+
+function PreambleHint({ text }: { text: string }) {
+  const [visible, setVisible] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const ref = useRef<HTMLSpanElement>(null);
+
+  const show = () => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    setPos({ top: rect.bottom + 6, left: rect.left + rect.width / 2 });
+    setVisible(true);
+  };
+
+  return (
+    <>
+      <span
+        ref={ref}
+        className="node-panel__preamble-hint"
+        onMouseEnter={show}
+        onMouseLeave={() => setVisible(false)}
+      >?</span>
+      {visible && createPortal(
+        <div
+          className="node-panel__preamble-tooltip"
+          style={{ top: pos.top, left: pos.left }}
+        >
+          <div className="node-panel__preamble-tooltip-header">Preamble</div>
+          {text}
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
+
 export function NodePanel() {
-  const tools = useTools();
+  const { tools, evaluatorTools } = useTools();
   const selectedNodeId = useGraphStore((s) => s.selectedNodeId);
   const nodes = useGraphStore((s) => s.nodes);
   const edges = useGraphStore((s) => s.edges);
@@ -111,7 +155,10 @@ export function NodePanel() {
             </div>
 
             <div className="node-panel__field">
-              <label className="node-panel__label">System Prompt</label>
+              <label className="node-panel__label">
+                System Prompt
+                <PreambleHint text={PREAMBLES[data.role]} />
+              </label>
               <textarea
                 className="node-panel__textarea"
                 value={data.systemPrompt}
@@ -216,18 +263,49 @@ export function NodePanel() {
                     </span>
                   </label>
                 ) : isEvaluator ? (
-                  <label className="node-panel__tool-row node-panel__tool-row--last">
-                    <input
-                      type="checkbox"
-                      className="node-panel__tool-checkbox"
-                      checked
-                      disabled
-                    />
-                    <span className="node-panel__tool-info">
-                      <span className="node-panel__tool-name">Judge Output</span>
-                      <span className="node-panel__tool-desc">Evaluators do not use external tools</span>
-                    </span>
-                  </label>
+                  <>
+                    {evaluatorTools.length === 0 ? (
+                      <label className="node-panel__tool-row node-panel__tool-row--last">
+                        <input
+                          type="checkbox"
+                          className="node-panel__tool-checkbox"
+                          checked
+                          disabled
+                        />
+                        <span className="node-panel__tool-info">
+                          <span className="node-panel__tool-name">Judge Output</span>
+                          <span className="node-panel__tool-desc">No optional tools available</span>
+                        </span>
+                      </label>
+                    ) : (
+                      evaluatorTools.map((tool, idx) => {
+                        const enabled = data.enabledTools ?? [];
+                        const checked = enabled.includes(tool.id);
+                        return (
+                          <label
+                            key={tool.id}
+                            className={`node-panel__tool-row${idx === evaluatorTools.length - 1 ? " node-panel__tool-row--last" : ""}`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="node-panel__tool-checkbox"
+                              checked={checked}
+                              onChange={() => {
+                                const next = checked
+                                  ? enabled.filter((t) => t !== tool.id)
+                                  : [...enabled, tool.id];
+                                updateNodeData(selectedNodeId, { enabledTools: next });
+                              }}
+                            />
+                            <span className="node-panel__tool-info">
+                              <span className="node-panel__tool-name">{tool.name}</span>
+                              <span className="node-panel__tool-desc">{tool.description}</span>
+                            </span>
+                          </label>
+                        );
+                      })
+                    )}
+                  </>
                 ) : (
                   <>
                     {hasEvaluatorChild && (

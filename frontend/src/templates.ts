@@ -72,4 +72,67 @@ export const TEMPLATES: Template[] = [
       },
     ],
   },
+  {
+    id: 'code-reviewer',
+    label: 'Code Reviewer',
+    nodes: [
+      {
+        id: 'cr-orchestrator',
+        type: 'agentNode',
+        position: { x: 500, y: 80 },
+        data: {
+          name: 'Orchestrator',
+          role: 'orchestrator',
+          systemPrompt:
+            'You are an orchestrator for a code writing system. When given a coding problem, call list_agents to discover available agents, then delegate the full problem description to the CodeWriter agent using invoke_agent. Once the writer returns its solution, present it to the user.',
+          enabledTools: [],
+        },
+      },
+      {
+        id: 'cr-writer',
+        type: 'agentNode',
+        position: { x: 500, y: 280 },
+        data: {
+          name: 'Code_Writer',
+          role: 'subagent',
+          systemPrompt:
+            'You are an expert software engineer. When given a coding problem, write a clean, correct, and efficient solution. After writing your solution, pass your solution to the evaluator to review it. Only pass pure python code to the evaluator.\n\nIf the evaluator provides PASS, return the code to the orchestrator.\n\nIf the evaluator provides FAIL, read the critique and update the code accordingly before passing back to the evaluator.\n\nIf the evaluator responds saying there is an issue unrelated to the code provided, provide the issue (not code) back the orchestrator immediately.',
+          enabledTools: [],
+        },
+      },
+      {
+        id: 'cr-evaluator',
+        type: 'agentNode',
+        position: { x: 180, y: 280 },
+        data: {
+          name: 'Code_Reviewer',
+          role: 'evaluator',
+          maxIterations: 2,
+          systemPrompt:
+            'You are a senior code reviewer. You will receive a code solution. Use the python_repl tool to actually execute the code and verify it produces correct output for several test cases before making your verdict. A passing solution must: (1) produce correct output for all test cases you run; (2) have optimal or near-optimal time and space complexity; (3) handle edge cases. If the solution passes all your tests and meets the above criteria, respond with PASS. Otherwise respond with FAIL: followed by a specific critique — include which test cases failed, what the output was vs expected, or what complexity issues you found.',
+          enabledTools: ['python_repl'],
+        },
+      },
+    ],
+    edges: [
+      {
+        id: 'cr-edge-orch-writer',
+        source: 'cr-orchestrator',
+        target: 'cr-writer',
+        data: { edgeType: 'delegation' },
+      },
+      {
+        id: 'cr-edge-writer-eval',
+        source: 'cr-writer',
+        target: 'cr-evaluator',
+        data: { edgeType: 'delegation' },
+      },
+      {
+        id: 'cr-edge-eval-writer',
+        source: 'cr-evaluator',
+        target: 'cr-writer',
+        data: { edgeType: 'feedback' },
+      },
+    ],
+  },
 ];

@@ -6,11 +6,14 @@ from google.adk.tools import FunctionTool
 from google.genai import types as genai_types
 from app.tools.tools import (
     TOOL_MAP,
+    EVALUATOR_TOOL_MAP,
     ORCHESTRATOR_TOOLS,
     ORCHESTRATOR_PREAMBLE,
+    SUBAGENT_PREAMBLE,
     EVALUATOR_PREAMBLE,
     set_run_context,
     make_invoke_evaluator,
+    make_list_tools,
 )
 from app.models import GraphDefinition
 import app.session.store as store
@@ -49,12 +52,14 @@ def build_graph(
     # Build all evaluator agents keyed by node id; not added to sub_agent_map
     evaluator_agents: dict[str, Agent] = {}
     for ev_node in evaluator_nodes:
+        ev_tools = [EVALUATOR_TOOL_MAP[t] for t in ev_node.data.enabledTools if t in EVALUATOR_TOOL_MAP]
+        all_ev_tools = [FunctionTool(make_list_tools(ev_tools, agent_name=ev_node.data.name, agent_id=ev_node.id))] + ev_tools
         evaluator_agents[ev_node.id] = Agent(
             name=ev_node.data.name,
             description=(ev_node.data.systemPrompt or "")[:120],
             model="gemini-2.5-flash",
             instruction=EVALUATOR_PREAMBLE + "\n\n" + (ev_node.data.systemPrompt or ""),
-            tools=[],
+            tools=all_ev_tools,
             before_model_callback=_cancel_callback,
         )
 
@@ -74,21 +79,18 @@ def build_graph(
 
     # Build sub-agent map (workers only)
     # Each worker that owns an evaluator gets a dedicated invoke_evaluator closure injected.
-    sub_agent_map: dict[str, Agent] = {}
-    for node in worker_nodes:
-        tools = [TOOL_MAP[t] for t in node.data.enabledTools if t in TOOL_MAP]
-        sub_agent_map[node.data.name] = None  # placeholder — filled after all agents exist
 
     # Two-pass: first create all worker Agent objects (so we can pass them to make_invoke_evaluator)
     worker_agents: dict[str, Agent] = {}
     for node in worker_nodes:
-        tools = [TOOL_MAP[t] for t in node.data.enabledTools if t in TOOL_MAP]
+        base_tools = [TOOL_MAP[t] for t in node.data.enabledTools if t in TOOL_MAP]
+        all_tools = [FunctionTool(make_list_tools(base_tools, agent_name=node.data.name, agent_id=node.id))] + base_tools
         agent = Agent(
             name=node.data.name,
             description=(node.data.systemPrompt or "")[:120],
             model="gemini-2.5-flash",
-            instruction=node.data.systemPrompt or "You are a helpful assistant.",
-            tools=tools,
+            instruction=SUBAGENT_PREAMBLE + "\n\n" + (node.data.systemPrompt or "You are a helpful assistant."),
+            tools=all_tools,
             before_model_callback=_cancel_callback,
         )
         worker_agents[node.id] = agent
@@ -100,12 +102,13 @@ def build_graph(
             worker_agent = worker_agents[node.id]
             invoke_evaluator_fn = make_invoke_evaluator(ev_agent, worker_agent, max_iter)
             base_tools = [TOOL_MAP[t] for t in node.data.enabledTools if t in TOOL_MAP]
+            all_tools = [FunctionTool(invoke_evaluator_fn)] + base_tools
             agent = Agent(
                 name=node.data.name,
                 description=(node.data.systemPrompt or "")[:120],
                 model="gemini-2.5-flash",
-                instruction=node.data.systemPrompt or "You are a helpful assistant.",
-                tools=[FunctionTool(invoke_evaluator_fn)] + base_tools,
+                instruction=SUBAGENT_PREAMBLE + "\n\n" + (node.data.systemPrompt or "You are a helpful assistant."),
+                tools=[FunctionTool(make_list_tools(all_tools, agent_name=node.data.name, agent_id=node.id))] + all_tools,
                 before_model_callback=_cancel_callback,
             )
             worker_agents[node.id] = agent

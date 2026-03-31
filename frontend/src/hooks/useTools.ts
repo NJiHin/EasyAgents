@@ -1,15 +1,26 @@
 import { useState, useEffect } from 'react';
 import type { ToolDefinition } from '../types';
 
-export function useTools() {
-  const [tools, setTools] = useState<ToolDefinition[]>([]);
+interface ToolsResponse {
+  tools: ToolDefinition[];
+  evaluatorTools: ToolDefinition[];
+}
+
+export function useTools(): ToolsResponse {
+  const [toolsResponse, setToolsResponse] = useState<ToolsResponse>({
+    tools: [],
+    evaluatorTools: [],
+  });
 
   useEffect(() => {
     fetch('/api/tools')
-      .then(r => r.json())
-      .then(setTools)
+      .then(r => {
+        if (!r.ok) throw new Error(`/api/tools returned ${r.status}`);
+        return r.json();
+      })
+      .then(setToolsResponse)
       .catch(console.error);
   }, []);
 
-  return tools;
+  return toolsResponse;
 }
