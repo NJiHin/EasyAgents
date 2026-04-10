@@ -2,6 +2,8 @@
 
 A visual multi-agent builder. Drag nodes onto a canvas, connect them, configure each agent's name, system prompt, and tools - submit a task and watch it execute in real time, review the logs and view the flamegraph-style chart for visualisation of tool use timeline. The visual node graph maps directly to a running Gemini ADK multi-agent system. Choose from Research Agent or Coding Reviewer template systems or build your own!
 
+https://github.com/user-attachments/assets/1becb2d8-a739-47fb-ab26-8acbdc2829a5
+
 ## Stack
 
 - **Frontend** — React 18 + Vite + TypeScript, React Flow canvas, Zustand state
