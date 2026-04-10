@@ -1,6 +1,7 @@
 phases/
 docs/
 pw-screenshots/
+node_modules/
 
 .claude
 .venv

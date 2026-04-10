@@ -58,7 +58,6 @@ async def execute_run(graph: GraphDefinition, task: str):
                 })
                 return
 
-            # Orchestrator only calls list_agents/invoke_agent
             if event.is_final_response() and event.content and event.content.parts:
                 final_text = "".join(
                     p.text for p in event.content.parts if hasattr(p, "text") and p.text
